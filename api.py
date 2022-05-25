@@ -16,7 +16,7 @@ def add_tenant(tenant):
     url = config.host + '/services/TenantMgtAdminService'
     headers = {
         'Authorization': 'Basic %s' % base64.b64encode(
-            str(config.admin_username + ':' + config.admin_password).encode()).decode('utf-8'),
+            str(config.admin_user['username'] + ':' + config.admin_user['password']).encode()).decode('utf-8'),
         'Content-Type': 'text/xml',
         'SOAPAction': 'urn:addTenant'
     }
@@ -25,11 +25,11 @@ def add_tenant(tenant):
     return response
 
 
-def add_role(tenant_username, tenant_password, role):
+def add_role(role):
     url = config.host + '/services/UserAdmin'
     headers = {
         'Authorization': 'Basic %s' % base64.b64encode(
-            str(tenant_username + ':' + tenant_password).encode()).decode('utf-8'),
+            str(config.current_user['username'] + ':' + config.current_user['password']).encode()).decode('utf-8'),
         'Content-Type': 'text/xml',
         'SOAPAction': 'urn:addRole'
     }
@@ -38,11 +38,11 @@ def add_role(tenant_username, tenant_password, role):
     return response
 
 
-def add_user(tenant_username, tenant_password, user):
+def add_user(user):
     url = config.host + '/services/UserAdmin'
     headers = {
         'Authorization': 'Basic %s' % base64.b64encode(
-            str(tenant_username + ':' + tenant_password).encode()).decode('utf-8'),
+            str(config.current_user['username'] + ':' + config.current_user['password']).encode()).decode('utf-8'),
         'Content-Type': 'text/xml',
         'SOAPAction': 'urn:addUser'
     }
@@ -52,21 +52,21 @@ def add_user(tenant_username, tenant_password, user):
 
 
 ########################################################################################################################
-# Publisher API
+# Token API
 ########################################################################################################################
 
 
-def get_consumer_credentials(username, password):
+def get_consumer_credentials():
     url = config.host + config.client_register_path
     headers = {
         'Authorization': 'Basic %s' % base64.b64encode(
-            str(username + ':' + password).encode()).decode('utf-8'),
+            str(config.current_user['username'] + ':' + config.current_user['password']).encode()).decode('utf-8'),
         'Content-Type': 'application/json'
     }
     data = json.dumps({
         'callbackUrl': 'www.google.lk',
         'clientName': 'rest_api_publisher',
-        'owner': username,
+        'owner': config.current_user['username'],
         'grantType': 'password refresh_token',
         'saasApp': True
     })
@@ -74,8 +74,8 @@ def get_consumer_credentials(username, password):
     return response.json()
 
 
-def get_access_token(user, scopes):
-    consumer_credentials = get_consumer_credentials(user['username'], user['password'])
+def get_access_token(scopes):
+    consumer_credentials = get_consumer_credentials()
     url = config.host + config.token_path
     headers = {
         'Authorization': 'Basic ' + base64.b64encode(
@@ -84,18 +84,23 @@ def get_access_token(user, scopes):
     }
     data = json.dumps({
         'grant_type': 'password',
-        'username': config.admin_username,
-        'password': config.admin_password,
+        'username': config.current_user['username'],
+        'password': config.current_user['password'],
         'scope': scopes
     })
     response = requests.post(url, headers=headers, data=data, verify=False)
     return response.json()['access_token']
 
 
-def create_api(user, api):
+########################################################################################################################
+# Publisher API
+########################################################################################################################
+
+
+def create_api(api):
     url = config.host + '/api/am/publisher/v2/apis'
     headers = {
-        'Authorization': 'Bearer %s' % get_access_token(user, 'apim:api_create'),
+        'Authorization': 'Bearer %s' % get_access_token('apim:api_create'),
         'Content-Type': 'application/json'
     }
     data = json.dumps(api)
@@ -103,13 +108,13 @@ def create_api(user, api):
     return response
 
 
-def update_api(user, api_id, api):
+def update_api(api_id, api):
     url = config.host + '/api/am/publisher/v2/apis/' + api_id
     headers = {
-        'Authorization': 'Bearer %s' % get_access_token(user, 'apim:api_create apim:api_publish'),
+        'Authorization': 'Bearer %s' % get_access_token('apim:api_create apim:api_publish'),
         'Content-Type': 'application/json'
     }
-    data = api
+    data = json.dumps(api)
     response = requests.put(url, headers=headers, data=data, verify=False)
     return response
 
@@ -123,7 +128,22 @@ def import_api_from_oas(file_path=None, file_url=None, additional_properties=Non
         'file': open(file_path, 'rb'),
         'url': file_url,
         'additionalProperties': additional_properties,
-        'inline_api_definition': inline_api_definition
+        'inlineAPIDefinition': inline_api_definition
+    }
+    response = requests.put(url, headers=headers, files=files, verify=False)
+    return response
+
+
+def import_api_from_wsdl_definition(file_path=None, file_url=None, additional_properties=None, implementation_type=None):
+    url = config.host + '/api/am/publisher/v2/import-wsdl/'
+    headers = {
+        'Authorization': 'Bearer %s' % get_access_token('apim:api_create')
+    }
+    files = {
+        'file': open(file_path, 'rb'),
+        'url': file_url,
+        'additionalProperties': additional_properties,
+        'implementationType': implementation_type
     }
     response = requests.put(url, headers=headers, files=files, verify=False)
     return response
@@ -143,6 +163,62 @@ def import_api_from_graphql_schema(definition_type=None, file_path=None, additio
     return response
 
 
+def create_new_api_version(api_id, new_version, default_version=False):
+    url = config.host + '/api/am/publisher/v2/apis/copy-api'
+    headers = {
+        'Authorization': 'Bearer %s' % get_access_token('apim:api_create')
+    }
+    params = {
+        'apiId': api_id,
+        'newVersion': new_version,
+        'defaultVersion': default_version,
+    }
+    response = requests.post(url, headers=headers, params=params, verify=False)
+    return response
+
+
 ########################################################################################################################
 # Developer Portal API
 ########################################################################################################################
+
+
+def create_application(application):
+    url = config.host + '/api/am/devportal/v2/applications'
+    headers = {
+        'Authorization': 'Bearer %s' % get_access_token('apim:subscribe apim:app_manage'),
+        'Content-Type': 'application/json'
+    }
+    data = json.dumps(application)
+    response = requests.post(url, headers=headers, data=data, verify=False)
+    return response
+
+
+def generate_application_keys(application_id, key_type, grant_types_to_be_supported):
+    url = config.host + '/api/am/devportal/v2/applications/' + application_id + "/generate-keys"
+    headers = {
+        'Authorization': 'Bearer %s' % get_access_token('apim:subscribe apim:app_manage'),
+        'Content-Type': 'application/json'
+    }
+    data = json.dumps({
+        'keyType': key_type,
+        'grantTypesToBeSupported': grant_types_to_be_supported
+    })
+    response = requests.post(url, headers=headers, data=data, verify=False)
+    return response
+
+
+def generate_application_token(application_id, key_mapping_id, consumer_secret, validity_period, scopes):
+    url = config.host + '/api/am/devportal/v2/applications/' + application_id \
+          + "/oauth-keys/" + key_mapping_id + "/generate-token"
+    headers = {
+        'Authorization': 'Bearer %s' % get_access_token('apim:subscribe apim:app_manage'),
+        'Content-Type': 'application/json'
+    }
+    data = json.dumps({
+        'consumerSecret': consumer_secret,
+        'validityPeriod': validity_period,
+        'scopes': scopes,
+    })
+    response = requests.post(url, headers=headers, data=data, verify=False)
+    return response
+

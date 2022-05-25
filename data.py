@@ -38,3 +38,13 @@ rest_apis = [
 ]
 
 graphql_schema_file_path = './resources/schema_graphql.graphql'
+
+
+applications = [
+    {
+        'name': 'CalculatorApp',
+        'throttlingPolicy': 'Unlimited',
+        "description": "Sample calculator application"
+    }
+]
+
