@@ -56,7 +56,7 @@ def add_user(user):
 ########################################################################################################################
 
 
-def get_consumer_credentials():
+def get_consumer_credentials(client_name):
     url = config.host + config.client_register_path
     headers = {
         'Authorization': 'Basic %s' % base64.b64encode(
@@ -65,7 +65,7 @@ def get_consumer_credentials():
     }
     data = json.dumps({
         'callbackUrl': 'www.google.lk',
-        'clientName': 'rest_api_publisher',
+        'clientName': client_name,
         'owner': config.current_user['username'],
         'grantType': 'password refresh_token',
         'saasApp': True
@@ -74,8 +74,8 @@ def get_consumer_credentials():
     return response.json()
 
 
-def get_access_token(scopes):
-    consumer_credentials = get_consumer_credentials()
+def get_access_token(client_name, scopes):
+    consumer_credentials = get_consumer_credentials(client_name)
     url = config.host + config.token_path
     headers = {
         'Authorization': 'Basic ' + base64.b64encode(
@@ -93,51 +93,123 @@ def get_access_token(scopes):
 
 
 ########################################################################################################################
-# Publisher API
+# Admin API
 ########################################################################################################################
 
 
-def create_api(api):
-    url = config.host + '/api/am/publisher/v2/apis'
+def add_advanced_throttling_policy(body):
+    url = config.host + config.admin_path + '/throttling/policies/advanced'
     headers = {
-        'Authorization': 'Bearer %s' % get_access_token('apim:api_create'),
+        'Authorization': 'Bearer %s' % get_access_token('rest_api_admin', 'apim:admin apim:tier_manage'),
         'Content-Type': 'application/json'
     }
-    data = json.dumps(api)
+    data = json.dumps(body)
     response = requests.post(url, headers=headers, data=data, verify=False)
     return response
 
 
-def update_api(api_id, api):
-    url = config.host + '/api/am/publisher/v2/apis/' + api_id
+def add_application_throttling_policy(body):
+    url = config.host + config.admin_path + '/throttling/policies/application'
     headers = {
-        'Authorization': 'Bearer %s' % get_access_token('apim:api_create apim:api_publish'),
+        'Authorization': 'Bearer %s' % get_access_token('rest_api_admin', 'apim:admin apim:tier_manage'),
         'Content-Type': 'application/json'
     }
-    data = json.dumps(api)
+    data = json.dumps(body)
+    response = requests.post(url, headers=headers, data=data, verify=False)
+    return response
+
+
+def add_subscription_throttling_policy(body):
+    url = config.host + config.admin_path + '/throttling/policies/subscription'
+    headers = {
+        'Authorization': 'Bearer %s' % get_access_token('rest_api_admin', 'apim:admin apim:tier_manage'),
+        'Content-Type': 'application/json'
+    }
+    data = json.dumps(body)
+    response = requests.post(url, headers=headers, data=data, verify=False)
+    return response
+
+
+def add_custom_throttling_policy(body):
+    url = config.host + config.admin_path + '/throttling/policies/custom'
+    headers = {
+        'Authorization': 'Bearer %s' % get_access_token('rest_api_admin', 'apim:admin apim:tier_manage'),
+        'Content-Type': 'application/json'
+    }
+    data = json.dumps(body)
+    response = requests.post(url, headers=headers, data=data, verify=False)
+    return response
+
+
+def add_role_alias_mapping(body):
+    url = config.host + config.admin_path + '/system-scopes/role-aliases'
+    headers = {
+        'Authorization': 'Bearer %s' % get_access_token('rest_api_admin', 'apim:admin apim:admin_operations'),
+        'Content-Type': 'application/json'
+    }
+    data = json.dumps(body)
     response = requests.put(url, headers=headers, data=data, verify=False)
     return response
 
 
-def import_api_from_oas(file_path=None, file_url=None, additional_properties=None, inline_api_definition=None):
-    url = config.host + '/api/am/publisher/v2/import-openapi/'
+def add_api_category(body):
+    url = config.host + config.admin_path + '/api-categories'
     headers = {
-        'Authorization': 'Bearer %s' % get_access_token('apim:api_create')
+        'Authorization': 'Bearer %s' % get_access_token('rest_api_admin', 'apim:admin apim:admin_operations'),
+        'Content-Type': 'application/json'
+    }
+    data = json.dumps(body)
+    response = requests.post(url, headers=headers, data=data, verify=False)
+    return response
+
+
+########################################################################################################################
+# Publisher API
+########################################################################################################################
+
+
+def create_api(body):
+    url = config.host + config.publisher_path + '/apis'
+    headers = {
+        'Authorization': 'Bearer %s' % get_access_token('rest_api_publisher', 'apim:api_create'),
+        'Content-Type': 'application/json'
+    }
+    data = json.dumps(body)
+    response = requests.post(url, headers=headers, data=data, verify=False)
+    return response
+
+
+def update_api(api_id, body):
+    url = config.host + config.publisher_path + '/apis/' + api_id
+    headers = {
+        'Authorization': 'Bearer %s' % get_access_token('rest_api_publisher', 'apim:api_create apim:api_publish'),
+        'Content-Type': 'application/json'
+    }
+    data = json.dumps(body)
+    response = requests.put(url, headers=headers, data=data, verify=False)
+    return response
+
+
+def import_api_from_oas(file_path='', file_url='', additional_properties={}, inline_api_definition=''):
+    url = config.host + config.publisher_path + '/apis/import-openapi'
+    headers = {
+        'Authorization': 'Bearer %s' % get_access_token('rest_api_publisher', 'apim:api_create')
     }
     files = {
         'file': open(file_path, 'rb'),
         'url': file_url,
-        'additionalProperties': additional_properties,
+        'additionalProperties': json.dumps(additional_properties),
         'inlineAPIDefinition': inline_api_definition
     }
+    print(files)
     response = requests.put(url, headers=headers, files=files, verify=False)
     return response
 
 
 def import_api_from_wsdl_definition(file_path=None, file_url=None, additional_properties=None, implementation_type=None):
-    url = config.host + '/api/am/publisher/v2/import-wsdl/'
+    url = config.host + config.publisher_path + '/apis/import-wsdl'
     headers = {
-        'Authorization': 'Bearer %s' % get_access_token('apim:api_create')
+        'Authorization': 'Bearer %s' % get_access_token('rest_api_publisher', 'apim:api_create')
     }
     files = {
         'file': open(file_path, 'rb'),
@@ -150,9 +222,9 @@ def import_api_from_wsdl_definition(file_path=None, file_url=None, additional_pr
 
 
 def import_api_from_graphql_schema(definition_type=None, file_path=None, additional_properties=None):
-    url = config.host + '/api/am/publisher/v2/import-graphql-schema/'
+    url = config.host + config.publisher_path + '/apis/import-graphql-schema'
     headers = {
-        'Authorization': 'Bearer %s' % get_access_token('apim:api_create')
+        'Authorization': 'Bearer %s' % get_access_token('rest_api_publisher', 'apim:api_create')
     }
     files = {
         'type': definition_type,
@@ -164,9 +236,9 @@ def import_api_from_graphql_schema(definition_type=None, file_path=None, additio
 
 
 def create_new_api_version(api_id, new_version, default_version=False):
-    url = config.host + '/api/am/publisher/v2/apis/copy-api'
+    url = config.host + config.publisher_path + '/apis/copy-api'
     headers = {
-        'Authorization': 'Bearer %s' % get_access_token('apim:api_create')
+        'Authorization': 'Bearer %s' % get_access_token('rest_api_publisher', 'apim:api_create')
     }
     params = {
         'apiId': api_id,
@@ -182,43 +254,35 @@ def create_new_api_version(api_id, new_version, default_version=False):
 ########################################################################################################################
 
 
-def create_application(application):
-    url = config.host + '/api/am/devportal/v2/applications'
+def create_application(body):
+    url = config.host + config.devportal_path + '/applications'
     headers = {
-        'Authorization': 'Bearer %s' % get_access_token('apim:subscribe apim:app_manage'),
+        'Authorization': 'Bearer %s' % get_access_token('rest_api_devportal', 'apim:subscribe apim:app_manage'),
         'Content-Type': 'application/json'
     }
-    data = json.dumps(application)
+    data = json.dumps(body)
     response = requests.post(url, headers=headers, data=data, verify=False)
     return response
 
 
-def generate_application_keys(application_id, key_type, grant_types_to_be_supported):
-    url = config.host + '/api/am/devportal/v2/applications/' + application_id + "/generate-keys"
+def generate_application_keys(application_id, body):
+    url = config.host + config.devportal_path + '/applications/' + application_id + "/generate-keys"
     headers = {
-        'Authorization': 'Bearer %s' % get_access_token('apim:subscribe apim:app_manage'),
+        'Authorization': 'Bearer %s' % get_access_token('rest_api_devportal', 'apim:subscribe apim:app_manage'),
         'Content-Type': 'application/json'
     }
-    data = json.dumps({
-        'keyType': key_type,
-        'grantTypesToBeSupported': grant_types_to_be_supported
-    })
+    data = json.dumps(body)
     response = requests.post(url, headers=headers, data=data, verify=False)
     return response
 
 
-def generate_application_token(application_id, key_mapping_id, consumer_secret, validity_period, scopes):
-    url = config.host + '/api/am/devportal/v2/applications/' + application_id \
+def generate_application_token(application_id, key_mapping_id, body):
+    url = config.host + config.devportal_path + '/applications/' + application_id \
           + "/oauth-keys/" + key_mapping_id + "/generate-token"
     headers = {
-        'Authorization': 'Bearer %s' % get_access_token('apim:subscribe apim:app_manage'),
+        'Authorization': 'Bearer %s' % get_access_token('rest_api_devportal', 'apim:subscribe apim:app_manage'),
         'Content-Type': 'application/json'
     }
-    data = json.dumps({
-        'consumerSecret': consumer_secret,
-        'validityPeriod': validity_period,
-        'scopes': scopes,
-    })
+    data = json.dumps(body)
     response = requests.post(url, headers=headers, data=data, verify=False)
     return response
-
