@@ -1,7 +1,9 @@
 # apim-data-populator
 
 1. Create tenants, roles, users
-2. Add APIS of all types
+2. Add scope assignments for roles
+3. Add api categories
+4. Add rate limiting policies
 
 ## System Requirements
 You need the latest versions of `Python` and `PIP` installed in your machine. Then run these commands using pip to install required python packages.

@@ -2,7 +2,6 @@ import api
 import data
 import utils
 
-
 for tenant in data.tenants:
     # Add tenant
     tenant_domain = tenant[tenant.index('<xsd:tenantDomain>')+18:tenant.index('</xsd:tenantDomain>')]
