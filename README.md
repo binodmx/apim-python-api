@@ -4,6 +4,8 @@
 2. Add scope assignments for roles
 3. Add api categories
 4. Add rate limiting policies
+5. Add apis
+6. Import apis
 
 ## System Requirements
 You need the latest versions of `Python` and `PIP` installed in your machine. Then run these commands using pip to install required python packages.

@@ -1,3 +1,4 @@
+import random
 import config
 
 
@@ -13,3 +14,7 @@ def validate_response(response, status_code, task):
     else:
         print('Error while ' + task)
         return False
+
+
+def get_random_number():
+    return str(random.randint(10000, 99999))
