@@ -1,14 +1,7 @@
-import json
-
-tenantss = [
+tenants = [
     '<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ser="http://services.mgt.tenant.carbon.wso2.org" xmlns:xsd="http://beans.common.stratos.carbon.wso2.org/xsd"><soapenv:Header/><soapenv:Body><ser:addTenant><ser:tenantInfoBean><xsd:tenantDomain>carbon.super</xsd:tenantDomain></ser:tenantInfoBean></ser:addTenant></soapenv:Body></soapenv:Envelope>',
     '<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ser="http://services.mgt.tenant.carbon.wso2.org" xmlns:xsd="http://beans.common.stratos.carbon.wso2.org/xsd"><soapenv:Header/><soapenv:Body><ser:addTenant><ser:tenantInfoBean><xsd:active>true</xsd:active><xsd:admin>admin</xsd:admin><xsd:adminPassword>admin</xsd:adminPassword><xsd:email>john.doe@adp-example.com</xsd:email><xsd:firstname>John</xsd:firstname><xsd:lastname>Doe</xsd:lastname><xsd:tenantDomain>adp-example.com</xsd:tenantDomain></ser:tenantInfoBean></ser:addTenant></soapenv:Body></soapenv:Envelope>',
     '<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ser="http://services.mgt.tenant.carbon.wso2.org" xmlns:xsd="http://beans.common.stratos.carbon.wso2.org/xsd"><soapenv:Header/><soapenv:Body><ser:addTenant><ser:tenantInfoBean><xsd:active>true</xsd:active><xsd:admin>admin</xsd:admin><xsd:adminPassword>admin</xsd:adminPassword><xsd:email>tom.henry@adp-sample.com</xsd:email><xsd:firstname>Tom</xsd:firstname><xsd:lastname>Henry</xsd:lastname><xsd:tenantDomain>adp-sample.com</xsd:tenantDomain></ser:tenantInfoBean></ser:addTenant></soapenv:Body></soapenv:Envelope>'
-]
-
-tenants = [
-    '<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ser="http://services.mgt.tenant.carbon.wso2.org" xmlns:xsd="http://beans.common.stratos.carbon.wso2.org/xsd"><soapenv:Header/><soapenv:Body><ser:addTenant><ser:tenantInfoBean><xsd:active>true</xsd:active><xsd:admin>admin</xsd:admin><xsd:adminPassword>admin</xsd:adminPassword><xsd:email>john.doe@adp-example.com</xsd:email><xsd:firstname>John</xsd:firstname><xsd:lastname>Doe</xsd:lastname><xsd:tenantDomain>dadp-example.com</xsd:tenantDomain></ser:tenantInfoBean></ser:addTenant></soapenv:Body></soapenv:Envelope>',
-    '<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ser="http://services.mgt.tenant.carbon.wso2.org" xmlns:xsd="http://beans.common.stratos.carbon.wso2.org/xsd"><soapenv:Header/><soapenv:Body><ser:addTenant><ser:tenantInfoBean><xsd:active>true</xsd:active><xsd:admin>admin</xsd:admin><xsd:adminPassword>admin</xsd:adminPassword><xsd:email>tom.henry@adp-sample.com</xsd:email><xsd:firstname>Tom</xsd:firstname><xsd:lastname>Henry</xsd:lastname><xsd:tenantDomain>dadp-sample.com</xsd:tenantDomain></ser:tenantInfoBean></ser:addTenant></soapenv:Body></soapenv:Envelope>'
 ]
 
 roles = [
