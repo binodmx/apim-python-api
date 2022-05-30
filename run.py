@@ -1,5 +1,3 @@
-import time
-
 import api
 import data
 import utils
@@ -44,28 +42,24 @@ for tenant in data.tenants:
     ####################################################################################################################
     utils.login('adp_crt_user@' + tenant_domain, 'adp_crt_user')
     # Create rest api from scratch
-    postfix = utils.get_random_number()
-    api_to_add = data.api_to_add.copy()
-    api_to_add['name'] += postfix
-    api_to_add['context'] += postfix
-    create_api_response = api.create_api(api_to_add)
-    utils.validate_response(create_api_response, 201, 'adding rest api ' + api_to_add['name'])
-    api_id = create_api_response.json()['id']
+    create_api_response = api.create_api(data.api_to_add_rest)
+    utils.validate_response(create_api_response, 201, 'adding rest api')
+    rest_api_id = create_api_response.json()['id']
     # Add documents
     for document in data.documents:
-        add_document_response = api.add_document(api_id, document)
-        utils.validate_response(create_api_response, 201, 'adding document ' + document['name'])
+        add_document_response = api.add_document(rest_api_id, document)
+        utils.validate_response(add_document_response, 201, 'adding document ' + document['name'])
         document_id = add_document_response.json()['documentId']
         if document['name'] in data.document_contents.keys():
-            add_document_content_response = api.add_document_content(api_id, document_id,
+            add_document_content_response = api.add_document_content(rest_api_id, document_id,
                                                                      data.document_contents[document['name']])
             utils.validate_response(add_document_content_response, 201, 'adding document content')
     # Add comment
-    add_comment_response = api.add_comment(api_id, data.comment)
+    add_comment_response = api.add_comment(rest_api_id, data.comment)
     # Add mediation policy
     in_mediation_policy = None
     try:
-        add_mediation_policy_response = api.add_mediation_policy(api_id, data.mediation_policy)
+        add_mediation_policy_response = api.add_mediation_policy(rest_api_id, data.mediation_policy)
         utils.validate_response(add_mediation_policy_response, 201, 'adding custom mediation policy')
         in_mediation_policy = add_mediation_policy_response.json()
     except:
@@ -78,25 +72,23 @@ for tenant in data.tenants:
     out_mediation_policy = get_mediation_policies_response.json()['list'][11]
     fault_mediation_policy = get_mediation_policies_response.json()['list'][15]
     # Update api
-    api_to_update = data.api_to_update.copy()
-    api_to_update['name'] += postfix
-    api_to_update['context'] += postfix
+    api_to_update = data.api_to_update_rest.copy()
     api_to_update['mediationPolicies'] = [in_mediation_policy, out_mediation_policy, fault_mediation_policy]
-    update_api_response = api.update_api(api_id, api_to_update)
-    utils.validate_response(update_api_response, 200, 'updating rest api ' + api_to_update['name'])
+    update_api_response = api.update_api(rest_api_id, api_to_update)
+    utils.validate_response(update_api_response, 200, 'updating rest api')
     # Create new version
-    create_new_version_response = api.create_new_api_version(api_id, '2.0.0')
+    create_new_version_response = api.create_new_api_version(rest_api_id, '2.0.0')
     utils.validate_response(create_new_version_response, 201, 'creating new version 2.0.0')
     # Create revision
-    create_revision_response = api.create_api_revision(api_id, {'description': 'adp revision description'})
+    create_revision_response = api.create_api_revision(rest_api_id, {'description': 'adp revision description'})
     utils.validate_response(create_revision_response, 201, 'creating revision')
     revision_id = create_revision_response.json()['id']
     # Deploy revision
-    deploy_revision_response = api.deploy_api_revision(api_id, revision_id, data.revision)
+    deploy_revision_response = api.deploy_api_revision(rest_api_id, revision_id, data.revision)
     utils.validate_response(deploy_revision_response, 201, 'deploying revision')
     utils.login('adp_pub_user@' + tenant_domain, 'adp_pub_user')
     # Publish api
-    publish_api_response = api.change_api_status(api_id, 'Publish')
+    publish_api_response = api.change_api_status(rest_api_id, 'Publish')
     utils.validate_response(publish_api_response, 200, 'publishing api')
     ####################################################################################################################
     utils.login('adp_crt_user@' + tenant_domain, 'adp_crt_user')
@@ -109,7 +101,7 @@ for tenant in data.tenants:
         print('hence, not importing apis')
         continue
     # Update api
-    update_api_response = api.update_api(api_id, data.imported_api_to_update_oas3)
+    update_api_response = api.update_api(api_id, data.api_to_update_oas3)
     utils.validate_response(update_api_response, 200, 'updating oas3 api')
     # Create new version
     create_new_version_response = api.create_new_api_version(api_id, '2.0.0')
@@ -148,7 +140,7 @@ for tenant in data.tenants:
         print('hence, not importing oas2 api')
         continue
     # Update api
-    update_api_response = api.update_api(api_id, data.imported_api_to_update_oas2)
+    update_api_response = api.update_api(api_id, data.api_to_update_oas2)
     utils.validate_response(update_api_response, 200, 'updating oas2 api')
     # Create new version
     create_new_version_response = api.create_new_api_version(api_id, '2.0.0', True)
@@ -164,4 +156,147 @@ for tenant in data.tenants:
     # Publish api
     publish_api_response = api.change_api_status(api_id, 'Publish')
     utils.validate_response(publish_api_response, 200, 'publishing api')
+    ####################################################################################################################
+    utils.login('adp_crt_user@' + tenant_domain, 'adp_crt_user')
+    # Import wsdl api
+    import_wsdl_api_response = api.import_api_from_wsdl_definition(data.api_to_import_wsdl)
+    utils.validate_response(import_wsdl_api_response, 201, 'importing wsdl api')
+    api_id = import_wsdl_api_response.json()['id']
+    # Update api
+    update_wsdl_api_response = api.update_api(api_id, data.api_to_update_wsdl)
+    utils.validate_response(update_wsdl_api_response, 200, 'updating wsdl api')
+    # Create new version
+    create_new_version_response = api.create_new_api_version(api_id, '2.0.0', True)
+    utils.validate_response(create_new_version_response, 201, 'creating new version 2.0.0')
+    # Create revision
+    create_revision_response = api.create_api_revision(api_id, {'description': 'adp revision description'})
+    utils.validate_response(create_revision_response, 201, 'creating revision')
+    revision_id = create_revision_response.json()['id']
+    # Deploy revision
+    deploy_revision_response = api.deploy_api_revision(api_id, revision_id, data.revision)
+    utils.validate_response(deploy_revision_response, 201, 'deploying revision')
+    utils.login('adp_pub_user@' + tenant_domain, 'adp_pub_user')
+    # Publish api
+    publish_api_response = api.change_api_status(api_id, 'Publish')
+    utils.validate_response(publish_api_response, 200, 'publishing api')
+    ####################################################################################################################
+    utils.login('adp_crt_user@' + tenant_domain, 'adp_crt_user')
+    # Import graphql api
+    import_graphql_api_response = api.import_api_from_graphql_schema(data.api_to_import_graphql)
+    utils.validate_response(import_graphql_api_response, 201, 'importing graphql api')
+    api_id = import_graphql_api_response.json()['id']
+    # Update api
+    update_graphql_api_response = api.update_api(api_id, data.api_to_update_graphql)
+    utils.validate_response(update_graphql_api_response, 200, 'updating graphql api')
+    # Create new version
+    create_new_version_response = api.create_new_api_version(api_id, '2.0.0', True)
+    utils.validate_response(create_new_version_response, 201, 'creating new version 2.0.0')
+    # Create revision
+    create_revision_response = api.create_api_revision(api_id, {'description': 'adp revision description'})
+    utils.validate_response(create_revision_response, 201, 'creating revision')
+    revision_id = create_revision_response.json()['id']
+    # Deploy revision
+    deploy_revision_response = api.deploy_api_revision(api_id, revision_id, data.revision)
+    utils.validate_response(deploy_revision_response, 201, 'deploying revision')
+    utils.login('adp_pub_user@' + tenant_domain, 'adp_pub_user')
+    # Publish api
+    publish_api_response = api.change_api_status(api_id, 'Publish')
+    utils.validate_response(publish_api_response, 200, 'publishing api')
+    ####################################################################################################################
+    utils.login('adp_crt_user@' + tenant_domain, 'adp_crt_user')
+    # Create websocket api
+    create_websocket_api_response = api.create_api(data.api_to_add_websocket)
+    utils.validate_response(create_websocket_api_response, 201, 'adding websocket api ')
+    api_id = create_websocket_api_response.json()['id']
+    # Update api definition
+    update_api_definition_response = api.update_async_api_definition(api_id, data.api_definition_websocket)
+    utils.validate_response(update_api_definition_response, 200, 'updating api definition')
+    # Update api
+    update_websocket_api_response = api.update_api(api_id, data.api_to_update_websocket)
+    utils.validate_response(update_websocket_api_response, 200, 'updating websocket api ')
+    # Create new version
+    create_new_version_response = api.create_new_api_version(api_id, '2.0.0')
+    utils.validate_response(create_new_version_response, 201, 'creating new version 2.0.0')
+    # Create revision
+    create_revision_response = api.create_api_revision(api_id, {'description': 'adp revision description'})
+    utils.validate_response(create_revision_response, 201, 'creating revision')
+    revision_id = create_revision_response.json()['id']
+    # Deploy revision
+    deploy_revision_response = api.deploy_api_revision(api_id, revision_id, data.revision)
+    utils.validate_response(deploy_revision_response, 201, 'deploying revision')
+    utils.login('adp_pub_user@' + tenant_domain, 'adp_pub_user')
+    # Publish api
+    publish_api_response = api.change_api_status(api_id, 'Publish')
+    utils.validate_response(publish_api_response, 200, 'publishing api')
+    ####################################################################################################################
+    utils.login('adp_crt_user@' + tenant_domain, 'adp_crt_user')
+    # Create websub api
+    create_websub_api_response = api.create_api(data.api_to_add_websub)
+    utils.validate_response(create_websub_api_response, 201, 'adding websub api ')
+    api_id = create_websub_api_response.json()['id']
+    # Update api definition
+    update_api_definition_response = api.update_async_api_definition(api_id, data.api_definition_websub)
+    utils.validate_response(update_api_definition_response, 200, 'updating api definition')
+    # Update api
+    update_websub_api_response = api.update_api(api_id, data.api_to_update_websub)
+    utils.validate_response(update_websub_api_response, 200, 'updating websub api ')
+    # Create new version
+    create_new_version_response = api.create_new_api_version(api_id, '2.0.0')
+    utils.validate_response(create_new_version_response, 201, 'creating new version 2.0.0')
+    # Create revision
+    create_revision_response = api.create_api_revision(api_id, {'description': 'adp revision description'})
+    utils.validate_response(create_revision_response, 201, 'creating revision')
+    revision_id = create_revision_response.json()['id']
+    # Deploy revision
+    deploy_revision_response = api.deploy_api_revision(api_id, revision_id, data.revision)
+    utils.validate_response(deploy_revision_response, 201, 'deploying revision')
+    utils.login('adp_pub_user@' + tenant_domain, 'adp_pub_user')
+    # Publish api
+    publish_api_response = api.change_api_status(api_id, 'Publish')
+    utils.validate_response(publish_api_response, 200, 'publishing api')
+    ####################################################################################################################
+    utils.login('adp_crt_user@' + tenant_domain, 'adp_crt_user')
+    # Create sse api
+    create_sse_api_response = api.create_api(data.api_to_add_sse)
+    utils.validate_response(create_sse_api_response, 201, 'adding sse api ')
+    api_id = create_sse_api_response.json()['id']
+    # Update api
+    update_sse_api_response = api.update_api(api_id, data.api_to_update_sse)
+    utils.validate_response(update_sse_api_response, 200, 'updating sse api ')
+    # Create new version
+    create_new_version_response = api.create_new_api_version(api_id, '2.0.0')
+    utils.validate_response(create_new_version_response, 201, 'creating new version 2.0.0')
+    # Create revision
+    create_revision_response = api.create_api_revision(api_id, {'description': 'adp revision description'})
+    utils.validate_response(create_revision_response, 201, 'creating revision')
+    revision_id = create_revision_response.json()['id']
+    # Deploy revision
+    deploy_revision_response = api.deploy_api_revision(api_id, revision_id, data.revision)
+    utils.validate_response(deploy_revision_response, 201, 'deploying revision')
+    utils.login('adp_pub_user@' + tenant_domain, 'adp_pub_user')
+    # Publish api
+    publish_api_response = api.change_api_status(api_id, 'Publish')
+    utils.validate_response(publish_api_response, 200, 'publishing api')
+    ####################################################################################################################
+    utils.login('adp_pub_user@' + tenant_domain, 'adp_pub_user')
+    # Create api product
+    api_product_to_add = data.api_product_to_add.copy()
+    api_product_to_add['apis'][0]['apiId'] = rest_api_id
+    create_api_product_response = api.create_api_product(api_product_to_add)
+    utils.validate_response(create_api_product_response, 201, 'adding api product')
+    api_product_id = create_api_product_response.json()['id']
+    # Update api product
+    api_product_to_update = data.api_product_to_update.copy()
+    api_product_to_update['apis'][0]['apiId'] = rest_api_id
+    update_api_product_response = api.update_api_product(api_product_id, api_product_to_update)
+    utils.validate_response(update_api_product_response, 200, 'updating api product')
+    # Add documents
+    for document in data.documents:
+        add_document_response = api.add_document_to_api_product(api_product_id, document)
+        utils.validate_response(add_document_response, 201, 'adding document ' + document['name'])
+        document_id = add_document_response.json()['documentId']
+        if document['name'] in data.document_contents.keys():
+            add_document_content_response = api.add_document_content_to_api_product(
+                api_product_id, document_id, data.document_contents[document['name']])
+            utils.validate_response(add_document_content_response, 201, 'adding document content')
     ####################################################################################################################

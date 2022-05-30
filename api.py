@@ -2,7 +2,6 @@ import json
 import base64
 import requests
 import config
-
 requests.packages.urllib3.disable_warnings(requests.packages.urllib3.exceptions.InsecureRequestWarning)
 
 
@@ -82,7 +81,8 @@ def get_access_token(client_name, scopes):
             'utf-8'),
         'Content-Type': 'application/x-www-form-urlencoded'
     }
-    data = 'grant_type=password&username=%s&password=%s&scope=%s' % (config.current_user['username'], config.current_user['password'], scopes)
+    data = 'grant_type=password&username=%s&password=%s&scope=%s' % (config.current_user['username'],
+                                                                     config.current_user['password'], scopes)
     response = requests.post(url, headers=headers, data=data, verify=False)
     return response.json()['access_token']
 
@@ -195,33 +195,23 @@ def import_api_from_oas(files):
     return response
 
 
-def import_api_from_wsdl_definition(file_path=None, file_url=None, additional_properties=None,
-                                    implementation_type=None):
+def import_api_from_wsdl_definition(files):
     url = config.host + config.publisher_path + '/apis/import-wsdl'
     headers = {
         'Authorization': 'Bearer %s' % get_access_token('rest_api_publisher', 'apim:api_create')
     }
-    files = {
-        'file': open(file_path, 'rb'),
-        'url': file_url,
-        'additionalProperties': additional_properties,
-        'implementationType': implementation_type
-    }
-    response = requests.put(url, headers=headers, files=files, verify=False)
+    files = files
+    response = requests.post(url, headers=headers, files=files, verify=False)
     return response
 
 
-def import_api_from_graphql_schema(definition_type=None, file_path=None, additional_properties=None):
+def import_api_from_graphql_schema(files):
     url = config.host + config.publisher_path + '/apis/import-graphql-schema'
     headers = {
         'Authorization': 'Bearer %s' % get_access_token('rest_api_publisher', 'apim:api_create')
     }
-    files = {
-        'type': definition_type,
-        'file': open(file_path, 'rb'),
-        'additionalProperties': additional_properties
-    }
-    response = requests.put(url, headers=headers, files=files, verify=False)
+    files = files
+    response = requests.post(url, headers=headers, files=files, verify=False)
     return response
 
 
@@ -236,17 +226,6 @@ def create_new_api_version(api_id, new_version, default_version=False):
         'defaultVersion': default_version,
     }
     response = requests.post(url, headers=headers, params=params, verify=False)
-    return response
-
-
-def add_shared_scope(data):
-    url = config.host + config.publisher_path + '/scopes'
-    headers = {
-        'Authorization': 'Bearer %s' % get_access_token('rest_api_publisher', 'apim:shared_scope_manage'),
-        'Content-Type': 'application/json'
-    }
-    data = json.dumps(data)
-    response = requests.post(url, headers=headers, data=data, verify=False)
     return response
 
 
@@ -285,7 +264,8 @@ def add_comment(api_id, data):
 def add_mediation_policy(api_id, files):
     url = config.host + config.publisher_path + '/apis/%s/mediation-policies' % api_id
     headers = {
-        'Authorization': 'Bearer %s' % get_access_token('rest_api_publisher', 'apim:api_create apim:mediation_policy_create'),
+        'Authorization': 'Bearer %s' % get_access_token('rest_api_publisher',
+                                                        'apim:api_create apim:mediation_policy_create'),
         'Content-Type': 'multipart/form-data'
     }
     files = files
@@ -293,19 +273,22 @@ def add_mediation_policy(api_id, files):
     return response
 
 
-def get_mediation_policies():
-    url = config.host + config.publisher_path + '/mediation-policies'
+def update_async_api_definition(api_id, files):
+    url = config.host + config.publisher_path + '/apis/%s/asyncapi' % api_id
     headers = {
-        'Authorization': 'Bearer %s' % get_access_token('rest_api_publisher', 'apim:api_view apim:mediation_policy_view'),
+        'Authorization': 'Bearer %s' % get_access_token('rest_api_publisher', 'apim:api_create'),
+        'Content-Type': 'multipart/form-data'
     }
-    response = requests.get(url, headers=headers, verify=False)
+    files = files
+    response = requests.put(url, headers=headers, files=files, verify=False)
     return response
 
 
 def create_api_revision(api_id, data):
     url = config.host + config.publisher_path + '/apis/%s/revisions' % api_id
     headers = {
-        'Authorization': 'Bearer %s' % get_access_token('rest_api_publisher', 'apim:api_create apim:api_publish apim:api_import_export'),
+        'Authorization': 'Bearer %s' % get_access_token('rest_api_publisher',
+                                                        'apim:api_create apim:api_publish apim:api_import_export'),
         'Content-Type': 'application/json'
     }
     data = json.dumps(data)
@@ -330,7 +313,8 @@ def deploy_api_revision(api_id, revision_id, data):
 def change_api_status(api_id, action):
     url = config.host + config.publisher_path + '/apis/change-lifecycle'
     headers = {
-        'Authorization': 'Bearer %s' % get_access_token('rest_api_publisher', 'apim:api_publish apim:api_import_export'),
+        'Authorization': 'Bearer %s' % get_access_token('rest_api_publisher',
+                                                        'apim:api_publish apim:api_import_export'),
         'Content-Type': 'application/json'
     }
     params = {
@@ -338,6 +322,70 @@ def change_api_status(api_id, action):
         'action': action
     }
     response = requests.post(url, headers=headers, params=params, verify=False)
+    return response
+
+
+def create_api_product(data):
+    url = config.host + config.publisher_path + '/api-products'
+    headers = {
+        'Authorization': 'Bearer %s' % get_access_token('rest_api_publisher', 'apim:api_publish'),
+        'Content-Type': 'application/json'
+    }
+    data = json.dumps(data)
+    response = requests.post(url, headers=headers, data=data, verify=False)
+    return response
+
+
+def update_api_product(api_product_id, data):
+    url = config.host + config.publisher_path + '/api-products/%s' % api_product_id
+    headers = {
+        'Authorization': 'Bearer %s' % get_access_token('rest_api_publisher', 'apim:api_publish'),
+        'Content-Type': 'application/json'
+    }
+    data = json.dumps(data)
+    response = requests.put(url, headers=headers, data=data, verify=False)
+    return response
+
+
+def add_document_to_api_product(api_product_id, data):
+    url = config.host + config.publisher_path + '/api-products/%s/documents' % api_product_id
+    headers = {
+        'Authorization': 'Bearer %s' % get_access_token('rest_api_publisher', 'apim:api_publish'),
+        'Content-Type': 'application/json'
+    }
+    data = json.dumps(data)
+    response = requests.post(url, headers=headers, data=data, verify=False)
+    return response
+
+
+def add_document_content_to_api_product(api_product_id, document_id, files):
+    url = config.host + config.publisher_path + '/api-products/%s/documents/%s/content' % (api_product_id, document_id)
+    headers = {
+        'Authorization': 'Bearer %s' % get_access_token('rest_api_publisher', 'apim:api_publish')
+    }
+    files = files
+    response = requests.post(url, headers=headers, files=files, verify=False)
+    return response
+
+
+def add_shared_scope(data):
+    url = config.host + config.publisher_path + '/scopes'
+    headers = {
+        'Authorization': 'Bearer %s' % get_access_token('rest_api_publisher', 'apim:shared_scope_manage'),
+        'Content-Type': 'application/json'
+    }
+    data = json.dumps(data)
+    response = requests.post(url, headers=headers, data=data, verify=False)
+    return response
+
+
+def get_mediation_policies():
+    url = config.host + config.publisher_path + '/mediation-policies'
+    headers = {
+        'Authorization': 'Bearer %s' % get_access_token('rest_api_publisher',
+                                                        'apim:api_view apim:mediation_policy_view'),
+    }
+    response = requests.get(url, headers=headers, verify=False)
     return response
 
 
