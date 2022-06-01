@@ -15,7 +15,7 @@ You need the latest versions of `Python` and `PIP` installed in your machine. Th
 
 ## Getting Started
 
-1. Download the source code using the command `git clone https://github.com/binodmx/apim-data-populator.git`
+1. Download the source code using the command `git clone https://github.com/binodmx/python-api-apim.git`
 2. Check `config.py` file to change configurations according to APIM version you are using
 3. Make sure APIM is up and running
 4. Run `python run.py` command to populate data
