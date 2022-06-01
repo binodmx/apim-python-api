@@ -1,4 +1,4 @@
-# apim-data-populator
+# python-api-apim
 
 1. Create tenants, roles, users
 2. Add scope assignments for roles
